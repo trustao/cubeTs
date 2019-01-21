@@ -78,15 +78,20 @@ class Surface {
         }
     }
 
+    get complete (): boolean {
+        return !this.data.some( surfaceData => {
+            return surfaceData.some(color => color !== this.data[0][0])
+        })
+    }
+
     consoleColor(): void {
-        console.log(`======Surface【${this.name}】=======`)
+        console.log(`=========【${this.name}】=========`)
         this.data.forEach(row => {
             console.log(row.map(color => {
                 return Color[color]
             }))
         })
-        console.log(`==========-----===========`)
-        console.log('')
+        console.log(`==========-----===========\n`)
     }
 }
 
@@ -145,6 +150,10 @@ class Cube {
         return surface
     }
 
+    get complete (): boolean {
+        return !this.horFace.some(surface => !surface.complete)
+    }
+
     createSurface(): void {
         const front = new Surface(Color.Red, this.order)
         const back = new Surface(Color.Orange, this.order)
@@ -189,6 +198,12 @@ class Cube {
         }
         this.vertFace[0] = this.front
         this.vertFace[2] = this.back
+    }
+
+    rollZ (dir: Direction): void {
+        this.rollX(Direction.CCW)
+        this.rollY(dir === Direction.CCW ? Direction.CW : Direction.CCW)
+        this.rollX(Direction.CW)
     }
 
     rotateFace(dir: Direction): void {
@@ -274,6 +289,15 @@ class Cube {
                 this.rotateSide(Direction.CCW, 1)
                 this.rollX(Direction.CW)
                 break
+            case "E2": // 横向中间层向右2次
+                // —
+                // →
+                // —
+                this.rollX(Direction.CCW)
+                this.rotateSide(Direction.CCW, 1)
+                this.rotateSide(Direction.CCW, 1)
+                this.rollX(Direction.CW)
+                break
             case "R": // 右边向上
                 // ||↑
                 this.rollY(Direction.CW)
@@ -304,6 +328,13 @@ class Cube {
                 this.rotateSide(Direction.CW, 1)
                 this.rollY(Direction.CW)
                 break
+            case "M2": // 垂直中间顺时针 （向下）
+                // |↓|
+                this.rollY(Direction.CCW)
+                this.rotateSide(Direction.CW, 1)
+                this.rotateSide(Direction.CW, 1)
+                this.rollY(Direction.CW)
+                break
             case "M'": // 垂直中间逆时针 （向上）
                 // |↑|
                 this.rollY(Direction.CCW)
@@ -320,6 +351,11 @@ class Cube {
                 break
             case "S": // Z方向中间顺时针
                 // /↑↓/
+                this.rotateSide(Direction.CW, 1)
+                break
+            case "S2": // Z方向中间顺时针
+                // /↑↓/
+                this.rotateSide(Direction.CW, 1)
                 this.rotateSide(Direction.CW, 1)
                 break
             case "S'": // Z方向中间逆时针
@@ -342,6 +378,47 @@ class Cube {
                 this.rollY(Direction.CCW)
                 this.rollY(Direction.CCW)
                 break
+            case 'x':
+                this.rollX(Direction.CW)
+                break
+            case "x'":
+                this.rollX(Direction.CCW)
+                break
+            case 'y':
+                this.rollY(Direction.CW)
+                break
+            case "y'":
+                this.rollY(Direction.CCW)
+                break
+            case 'z':
+                this.rollZ(Direction.CW)
+                break
+            case "z'":
+                this.rollZ(Direction.CCW)
+                break
+            case "u2": // 顶部两层顺时针 (向左)2次
+                // ←
+                // ←
+                // —
+                this.step('D', recovery)
+                this.step('D', recovery)
+                this.rollY(Direction.CW)
+                this.rollY(Direction.CW)
+                break
+            case "u": // 顶部两层顺时针 (向左)
+                // ←
+                // ←
+                // —
+                this.step('D', recovery)
+                this.rollY(Direction.CW)
+                break
+            case "u'": // 顶部两层逆时针 (向右)
+                // ←
+                // ←
+                // —
+                this.step('D', recovery)
+                this.rollY(Direction.CCW)
+                break
             default:
                 console.error('method is not exist')
         }
@@ -360,7 +437,13 @@ class Cube {
             this.step(action.replace(/(\w)('?)/, ($0, $1, $2) =>  $1 + ($2 ? '' : "'")), true)
         })
     }
+
+    run (formulaStr: string): void {
+        formulaStr.replace(/\((.+?)\)2/g, '$1$1')
+            .split(/(?=[a-zA-Z](?='|\d)?)/).forEach(method => this.step(method))
+    }
 }
+
 const steps: string[] = [
     "U", "U'", "D", "D'", "E", "E'", "R", "R'", "L", "L'", "M", "M'", "F", "F'", "S", "S'", "B", "B'"
 ]
@@ -387,31 +470,50 @@ const tips = {
 
 const cube = new Cube();
 
-cube.upset()
-cube.consoleFace()
+// cube.upset()
+// cube.consoleFace()
 
-cube.history.forEach(k => {
-    console.log(`====[${k}]====`)
-    console.log(tips[k])
-    console.log('')
-})
-cube.recovery()
-cube.consoleFace()
-
-const guaijiao: Formula = [
-    "R", "U", "R'", "U'", "R'", "F", "R", "F'"
-]
-const yizi: Formula = [
-    "F", "R", "U'", "R'", "U'", "R", "U", "R'", "F'"
-]
-
-const LF: Formula = [
-    "L'", "U'", "L", "U'", "L'", "U'", "U'", "L", "U'"
-]
+// console.log(cube.complete)
+// cube.history.forEach(k => {
+//     console.log(`====[${k}]====`)
+//     console.log(tips[k])
+//     console.log('')
+// })
+// cube.recovery()
+//
+// const guaijiao: Formula = [
+//     "R", "U", "R'", "U'", "R'", "F", "R", "F'"
+// ]
+// const yizi: Formula = [
+//     "F", "R", "U'", "R'", "U'", "R", "U", "R'", "F'"
+// ]
+//
+// const LF: Formula = [
+//     "L'", "U'", "L", "U'", "L'", "U'", "U'", "L"
+// ]
 const RF: Formula = [
-    "R", "U", "R'", "U", "R", "U", "U", "R'", "U"
+    "R", "U", "R'", "U", "R", "U", "U", "R'"
 ]
+// RF.forEach(a => {
+//     cube.step(a)
+//     console.log(`====[${a}]====`)
+//     console.log(tips[a])
+//     console.log('')
+// })
+// LF.forEach(a => {
+//     cube.step(a)
+//     console.log(`====[${a}]====`)
+//     console.log(tips[a])
+//     console.log('')
+// })
+const stra: string = RF.join('')
 
+console.log(stra)
+
+cube.run(stra)
+
+cube.consoleFace()
+console.log(cube.complete)
 
 // cube.front.data = [
 //     [Color.Orange, Color.Green, Color.Green],

@@ -85,15 +85,24 @@ var Surface = /** @class */ (function () {
             this.data = Array(this.order).fill(null).map(function (e, index) { return _this.getColumnColor(_this.order - index - 1); });
         }
     };
+    Object.defineProperty(Surface.prototype, "complete", {
+        get: function () {
+            var _this = this;
+            return !this.data.some(function (surfaceData) {
+                return surfaceData.some(function (color) { return color !== _this.data[0][0]; });
+            });
+        },
+        enumerable: true,
+        configurable: true
+    });
     Surface.prototype.consoleColor = function () {
-        console.log("======Surface\u3010" + this.name + "\u3011=======");
+        console.log("=========\u3010" + this.name + "\u3011=========");
         this.data.forEach(function (row) {
             console.log(row.map(function (color) {
                 return Color[color];
             }));
         });
-        console.log("==========-----===========");
-        console.log('');
+        console.log("==========-----===========\n");
     };
     return Surface;
 }());
@@ -171,6 +180,13 @@ var Cube = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(Cube.prototype, "complete", {
+        get: function () {
+            return !this.horFace.some(function (surface) { return !surface.complete; });
+        },
+        enumerable: true,
+        configurable: true
+    });
     Cube.prototype.createSurface = function () {
         var front = new Surface(Color.Red, this.order);
         var back = new Surface(Color.Orange, this.order);
@@ -183,7 +199,7 @@ var Cube = /** @class */ (function () {
     };
     Cube.prototype.rollX = function (dir) {
         this.rollAction = RollAction.Vertical;
-        if (dir === Direction.CW) { // 整体向上
+        if (dir === Direction.CW) {
             this.vertFace.push(this.vertFace.shift());
             this.left.rotate(Direction.CCW);
             this.right.rotate(Direction.CW);
@@ -202,7 +218,7 @@ var Cube = /** @class */ (function () {
     };
     Cube.prototype.rollY = function (dir) {
         this.rollAction = RollAction.Horizatal;
-        if (dir === Direction.CW) { // 整体向左
+        if (dir === Direction.CW) {
             this.horFace.push(this.horFace.shift());
             this.top.rotate(Direction.CW);
             this.bottom.rotate(Direction.CCW);
@@ -214,6 +230,11 @@ var Cube = /** @class */ (function () {
         }
         this.vertFace[0] = this.front;
         this.vertFace[2] = this.back;
+    };
+    Cube.prototype.rollZ = function (dir) {
+        this.rollX(Direction.CCW);
+        this.rollY(dir === Direction.CCW ? Direction.CW : Direction.CCW);
+        this.rollX(Direction.CW);
     };
     Cube.prototype.rotateFace = function (dir) {
         this.front.rotate(dir);
@@ -250,7 +271,7 @@ var Cube = /** @class */ (function () {
         if (!recovery)
             this.history.push(method);
         switch (method) {
-            case "U": // 顶部顺时针 (向左)
+            case "U":// 顶部顺时针 (向左)
                 // ←
                 // —
                 // —
@@ -258,7 +279,7 @@ var Cube = /** @class */ (function () {
                 this.rotateFace(Direction.CW);
                 this.rollX(Direction.CW);
                 break;
-            case "U'": // 顶部逆时针
+            case "U'":// 顶部逆时针
                 // →
                 // —
                 // —
@@ -266,7 +287,7 @@ var Cube = /** @class */ (function () {
                 this.rotateFace(Direction.CCW);
                 this.rollX(Direction.CW);
                 break;
-            case "D'": // 底部逆时针
+            case "D'":// 底部逆时针
                 // —
                 // —
                 // ←
@@ -274,7 +295,7 @@ var Cube = /** @class */ (function () {
                 this.rotateFace(Direction.CCW);
                 this.rollX(Direction.CCW);
                 break;
-            case "D": // 底部顺时针
+            case "D":// 底部顺时针
                 // —
                 // —
                 // →
@@ -282,7 +303,7 @@ var Cube = /** @class */ (function () {
                 this.rotateFace(Direction.CW);
                 this.rollX(Direction.CCW);
                 break;
-            case "E'": // 横向中间层向左
+            case "E'":// 横向中间层向左
                 // —
                 // ←
                 // —
@@ -290,7 +311,7 @@ var Cube = /** @class */ (function () {
                 this.rotateSide(Direction.CW, 1);
                 this.rollX(Direction.CW);
                 break;
-            case "E": // 横向中间层向右
+            case "E":// 横向中间层向右
                 // —
                 // →
                 // —
@@ -298,59 +319,80 @@ var Cube = /** @class */ (function () {
                 this.rotateSide(Direction.CCW, 1);
                 this.rollX(Direction.CW);
                 break;
-            case "R": // 右边向上
+            case "E2":// 横向中间层向右2次
+                // —
+                // →
+                // —
+                this.rollX(Direction.CCW);
+                this.rotateSide(Direction.CCW, 1);
+                this.rotateSide(Direction.CCW, 1);
+                this.rollX(Direction.CW);
+                break;
+            case "R":// 右边向上
                 // ||↑
                 this.rollY(Direction.CW);
                 this.rotateFace(Direction.CW);
                 this.rollY(Direction.CCW);
                 break;
-            case "R'": // 右边向下
+            case "R'":// 右边向下
                 // ||↓
                 this.rollY(Direction.CW);
                 this.rotateFace(Direction.CCW);
                 this.rollY(Direction.CCW);
                 break;
-            case "L": // 左边
+            case "L":// 左边
                 // ↓||
                 this.rollY(Direction.CCW);
                 this.rotateFace(Direction.CW);
                 this.rollY(Direction.CW);
                 break;
-            case "L'": // 左边
+            case "L'":// 左边
                 // ↑||
                 this.rollY(Direction.CCW);
                 this.rotateFace(Direction.CCW);
                 this.rollY(Direction.CW);
                 break;
-            case "M": // 垂直中间顺时针 （向下）
+            case "M":// 垂直中间顺时针 （向下）
                 // |↓|
                 this.rollY(Direction.CCW);
                 this.rotateSide(Direction.CW, 1);
                 this.rollY(Direction.CW);
                 break;
-            case "M'": // 垂直中间逆时针 （向上）
+            case "M2":// 垂直中间顺时针 （向下）
+                // |↓|
+                this.rollY(Direction.CCW);
+                this.rotateSide(Direction.CW, 1);
+                this.rotateSide(Direction.CW, 1);
+                this.rollY(Direction.CW);
+                break;
+            case "M'":// 垂直中间逆时针 （向上）
                 // |↑|
                 this.rollY(Direction.CCW);
                 this.rotateSide(Direction.CCW, 1);
                 this.rollY(Direction.CW);
                 break;
-            case "F": // 前面顺时针
+            case "F":// 前面顺时针
                 // ↑↓//
                 this.rotateFace(Direction.CW);
                 break;
-            case "F'": // 前面逆时针
+            case "F'":// 前面逆时针
                 // ↓↑//
                 this.rotateFace(Direction.CCW);
                 break;
-            case "S": // Z方向中间顺时针
+            case "S":// Z方向中间顺时针
                 // /↑↓/
                 this.rotateSide(Direction.CW, 1);
                 break;
-            case "S'": // Z方向中间逆时针
+            case "S2":// Z方向中间顺时针
+                // /↑↓/
+                this.rotateSide(Direction.CW, 1);
+                this.rotateSide(Direction.CW, 1);
+                break;
+            case "S'":// Z方向中间逆时针
                 // /↓↑/
                 this.rotateSide(Direction.CCW, 1);
                 break;
-            case "B": // 背面顺时针
+            case "B":// 背面顺时针
                 // //↓↑
                 this.rollY(Direction.CW);
                 this.rollY(Direction.CW);
@@ -358,12 +400,53 @@ var Cube = /** @class */ (function () {
                 this.rollY(Direction.CCW);
                 this.rollY(Direction.CCW);
                 break;
-            case "B'": // Z方向中间逆时针
+            case "B'":// Z方向中间逆时针
                 // //↑↓
                 this.rollY(Direction.CW);
                 this.rollY(Direction.CW);
                 this.rotateFace(Direction.CCW);
                 this.rollY(Direction.CCW);
+                this.rollY(Direction.CCW);
+                break;
+            case 'x':
+                this.rollX(Direction.CW);
+                break;
+            case "x'":
+                this.rollX(Direction.CCW);
+                break;
+            case 'y':
+                this.rollY(Direction.CW);
+                break;
+            case "y'":
+                this.rollY(Direction.CCW);
+                break;
+            case 'z':
+                this.rollZ(Direction.CW);
+                break;
+            case "z'":
+                this.rollZ(Direction.CCW);
+                break;
+            case "u2":// 顶部两层顺时针 (向左)2次
+                // ←
+                // ←
+                // —
+                this.step('D', recovery);
+                this.step('D', recovery);
+                this.rollY(Direction.CW);
+                this.rollY(Direction.CW);
+                break;
+            case "u":// 顶部两层顺时针 (向左)
+                // ←
+                // ←
+                // —
+                this.step('D', recovery);
+                this.rollY(Direction.CW);
+                break;
+            case "u'":// 顶部两层逆时针 (向右)
+                // ←
+                // ←
+                // —
+                this.step('D', recovery);
                 this.rollY(Direction.CCW);
                 break;
             default:
@@ -383,6 +466,11 @@ var Cube = /** @class */ (function () {
         this.history.reverse().forEach(function (action) {
             _this.step(action.replace(/(\w)('?)/, function ($0, $1, $2) { return $1 + ($2 ? '' : "'"); }), true);
         });
+    };
+    Cube.prototype.run = function (formulaStr) {
+        var _this = this;
+        formulaStr.replace(/\((.+?)\)2/g, '$1$1')
+            .split(/(?=[a-zA-Z](?='|\d)?)/).forEach(function (method) { return _this.step(method); });
     };
     return Cube;
 }());
@@ -410,27 +498,46 @@ var tips = {
     "B'": "//\u2191\u2193",
 };
 var cube = new Cube();
-cube.upset();
-cube.consoleFace();
-cube.history.forEach(function (k) {
-    console.log("====[" + k + "]====");
-    console.log(tips[k]);
-    console.log('');
-});
-cube.recovery();
-cube.consoleFace();
-var guaijiao = [
-    "R", "U", "R'", "U'", "R'", "F", "R", "F'"
-];
-var yizi = [
-    "F", "R", "U'", "R'", "U'", "R", "U", "R'", "F'"
-];
-var LF = [
-    "L'", "U'", "L", "U'", "L'", "U'", "U'", "L", "U'"
-];
+// cube.upset()
+// cube.consoleFace()
+// console.log(cube.complete)
+// cube.history.forEach(k => {
+//     console.log(`====[${k}]====`)
+//     console.log(tips[k])
+//     console.log('')
+// })
+// cube.recovery()
+//
+// const guaijiao: Formula = [
+//     "R", "U", "R'", "U'", "R'", "F", "R", "F'"
+// ]
+// const yizi: Formula = [
+//     "F", "R", "U'", "R'", "U'", "R", "U", "R'", "F'"
+// ]
+//
+// const LF: Formula = [
+//     "L'", "U'", "L", "U'", "L'", "U'", "U'", "L"
+// ]
 var RF = [
-    "R", "U", "R'", "U", "R", "U", "U", "R'", "U"
+    "R", "U", "R'", "U", "R", "U", "U", "R'"
 ];
+// RF.forEach(a => {
+//     cube.step(a)
+//     console.log(`====[${a}]====`)
+//     console.log(tips[a])
+//     console.log('')
+// })
+// LF.forEach(a => {
+//     cube.step(a)
+//     console.log(`====[${a}]====`)
+//     console.log(tips[a])
+//     console.log('')
+// })
+var stra = RF.join('');
+console.log(stra);
+cube.run(stra);
+cube.consoleFace();
+console.log(cube.complete);
 // cube.front.data = [
 //     [Color.Orange, Color.Green, Color.Green],
 //     [Color.White, Color.Red, Color.Red],
